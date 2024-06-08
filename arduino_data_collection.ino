@@ -1,6 +1,6 @@
 #include <Servo.h>
 #include <AFMotor.h>
-#include <SoftwareSerial.h>
+#include <SoftwareSerial.h> 
 
 // 모터 정의
 AF_DCMotor motor1(1);  // 모터 쉴드 M1 연결
@@ -15,6 +15,17 @@ Servo servo2;
 int servo1Pos, servo2Pos;
 int speedDelay = 20;
 
+// 모터 속도 및 방향 상태 변수
+int motor1Speed = 80;
+int motor2Speed = 80;
+int motor3Speed = 80;
+int motor4Speed = 80;
+
+char motor1Direction = 'S'; // S: Stop, F: Forward, B: Backward
+char motor2Direction = 'S';
+char motor3Direction = 'S';
+char motor4Direction = 'S';
+
 // 릴레이 핀 정의
 const int relayPin = 14;  // A0 = D14
 
@@ -22,7 +33,7 @@ void setup() {
   Serial.begin(9600);  // 시리얼 통신 시작
 
   servo1.attach(9);   // 서보 모터 1 핀
-  servo2.attach(10);  // 서보 모터 2 핀
+  servo2.attach(10);   // 서보 모터 2 핀
   servo1Pos = 90;
   servo2Pos = 90;  
 
@@ -32,10 +43,10 @@ void setup() {
   pinMode(relayPin, OUTPUT);  // 릴레이 출력 설정
 
   // 모터 속도 설정
-  motor1.setSpeed(80);
-  motor2.setSpeed(80);
-  motor3.setSpeed(80);
-  motor4.setSpeed(80);
+  motor1.setSpeed(motor1Speed);
+  motor2.setSpeed(motor2Speed);
+  motor3.setSpeed(motor3Speed);
+  motor4.setSpeed(motor4Speed);
 }
 
 void loop() {
@@ -98,14 +109,14 @@ void loop() {
     }
 
     // 모터와 서보 모터 상태 전송
-    Serial.print("M1:"); Serial.print(motor1.getSpeed());
-    Serial.print(",D1:"); Serial.print(motor1.getDirection() == FORWARD ? "F" : motor1.getDirection() == BACKWARD ? "B" : "S");
-    Serial.print(",M2:"); Serial.print(motor2.getSpeed());
-    Serial.print(",D2:"); Serial.print(motor2.getDirection() == FORWARD ? "F" : motor2.getDirection() == BACKWARD ? "B" : "S");
-    Serial.print(",M3:"); Serial.print(motor3.getSpeed());
-    Serial.print(",D3:"); Serial.print(motor3.getDirection() == FORWARD ? "F" : motor3.getDirection() == BACKWARD ? "B" : "S");
-    Serial.print(",M4:"); Serial.print(motor4.getSpeed());
-    Serial.print(",D4:"); Serial.print(motor4.getDirection() == FORWARD ? "F" : motor4.getDirection() == BACKWARD ? "B" : "S");
+    Serial.print("M1:"); Serial.print(motor1Speed);
+    Serial.print(",D1:"); Serial.print(motor1Direction);
+    Serial.print(",M2:"); Serial.print(motor2Speed);
+    Serial.print(",D2:"); Serial.print(motor2Direction);
+    Serial.print(",M3:"); Serial.print(motor3Speed);
+    Serial.print(",D3:"); Serial.print(motor3Direction);
+    Serial.print(",M4:"); Serial.print(motor4Speed);
+    Serial.print(",D4:"); Serial.print(motor4Direction);
     Serial.print(",S1:"); Serial.print(servo1Pos);
     Serial.print(",S2:"); Serial.println(servo2Pos);
   }
@@ -116,6 +127,10 @@ void moveForward() {
   motor2.run(FORWARD);
   motor3.run(FORWARD);
   motor4.run(FORWARD);
+  motor1Direction = 'F';
+  motor2Direction = 'F';
+  motor3Direction = 'F';
+  motor4Direction = 'F';
 }
 
 void moveBackward() {
@@ -123,6 +138,10 @@ void moveBackward() {
   motor2.run(BACKWARD);
   motor3.run(BACKWARD);
   motor4.run(BACKWARD);
+  motor1Direction = 'B';
+  motor2Direction = 'B';
+  motor3Direction = 'B';
+  motor4Direction = 'B';
 }
 
 void moveSidewaysLeft() {
@@ -130,6 +149,10 @@ void moveSidewaysLeft() {
   motor2.run(FORWARD);
   motor3.run(FORWARD);
   motor4.run(BACKWARD);
+  motor1Direction = 'B';
+  motor2Direction = 'F';
+  motor3Direction = 'F';
+  motor4Direction = 'B';
 }
 
 void moveSidewaysRight() {
@@ -137,6 +160,10 @@ void moveSidewaysRight() {
   motor2.run(BACKWARD);
   motor3.run(BACKWARD);
   motor4.run(FORWARD);
+  motor1Direction = 'F';
+  motor2Direction = 'B';
+  motor3Direction = 'B';
+  motor4Direction = 'F';
 }
 
 void moveLeftForward() {
@@ -144,6 +171,10 @@ void moveLeftForward() {
   motor2.run(FORWARD);
   motor3.run(FORWARD);
   motor4.run(RELEASE);
+  motor1Direction = 'S';
+  motor2Direction = 'F';
+  motor3Direction = 'F';
+  motor4Direction = 'S';
 }
 
 void moveRightForward() {
@@ -151,6 +182,10 @@ void moveRightForward() {
   motor2.run(RELEASE);
   motor3.run(RELEASE);
   motor4.run(FORWARD);
+  motor1Direction = 'F';
+  motor2Direction = 'S';
+  motor3Direction = 'S';
+  motor4Direction = 'F';
 }
 
 void moveLeftBackward() {
@@ -158,6 +193,10 @@ void moveLeftBackward() {
   motor2.run(RELEASE);
   motor3.run(RELEASE);
   motor4.run(BACKWARD);
+  motor1Direction = 'B';
+  motor2Direction = 'S';
+  motor3Direction = 'S';
+  motor4Direction = 'B';
 }
 
 void moveRightBackward() {
@@ -165,6 +204,10 @@ void moveRightBackward() {
   motor2.run(BACKWARD);
   motor3.run(BACKWARD);
   motor4.run(RELEASE);
+  motor1Direction = 'S';
+  motor2Direction = 'B';
+  motor3Direction = 'B';
+  motor4Direction = 'S';
 }
 
 void rotateLeft() {
@@ -172,6 +215,10 @@ void rotateLeft() {
   motor2.run(FORWARD);
   motor3.run(BACKWARD);
   motor4.run(FORWARD);
+  motor1Direction = 'B';
+  motor2Direction = 'F';
+  motor3Direction = 'B';
+  motor4Direction = 'F';
 }
 
 void rotateRight() {
@@ -179,6 +226,10 @@ void rotateRight() {
   motor2.run(BACKWARD);
   motor3.run(FORWARD);
   motor4.run(BACKWARD);
+  motor1Direction = 'F';
+  motor2Direction = 'B';
+  motor3Direction = 'F';
+  motor4Direction = 'B';
 }
 
 void stop() {
@@ -186,6 +237,10 @@ void stop() {
   motor2.run(RELEASE);
   motor3.run(RELEASE);
   motor4.run(RELEASE);
+  motor1Direction = 'S';
+  motor2Direction = 'S';
+  motor3Direction = 'S';
+  motor4Direction = 'S';
 }
 
 void moveServo1up() {
