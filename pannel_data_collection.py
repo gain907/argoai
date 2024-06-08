@@ -34,6 +34,7 @@ frame_count = 0
 running = True
 collecting_data = False
 command = ''
+lock = threading.Lock()
 
 # 키보드 입력 함수
 def getKey():
@@ -101,6 +102,25 @@ def handle_keys():
                 ser.write(command.encode())
                 print(f"Command: {command}")
 
+# 데이터 저장 함수
+def save_data(timestamp, image_path, arduino_data):
+    data_parts = arduino_data.split(',')
+    if len(data_parts) == 10:
+        motor1_speed = data_parts[0].split(':')[1]
+        motor1_dir = data_parts[1].split(':')[1]
+        motor2_speed = data_parts[2].split(':')[1]
+        motor2_dir = data_parts[3].split(':')[1]
+        motor3_speed = data_parts[4].split(':')[1]
+        motor3_dir = data_parts[5].split(':')[1]
+        motor4_speed = data_parts[6].split(':')[1]
+        motor4_dir = data_parts[7].split(':')[1]
+        servo1_angle = data_parts[8].split(':')[1]
+        servo2_angle = data_parts[9].split(':')[1]
+
+        with open(csv_file, mode='a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([timestamp, image_path, motor1_speed, motor1_dir, motor2_speed, motor2_dir, motor3_speed, motor3_dir, motor4_speed, motor4_dir, servo1_angle, servo2_angle, command])
+
 # 카메라 초기화
 cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -114,59 +134,6 @@ if not cap.isOpened():
 key_thread = threading.Thread(target=handle_keys)
 key_thread.start()
 
-def collect_data():
-    global frame_count, command
-    while running:
-        if collecting_data:
-            # 0.3초마다 데이터 수집
-            time.sleep(0.3)
-
-            ret, video = cap.read()
-            if not ret:
-                print("Error: Could not read frame.")
-                break
-
-            video = cv2.flip(video, 1)
-            cv2.imshow("image", video)
-
-            # 이미지 저장 경로 생성
-            timestamp = int(time.time())
-            image_path = os.path.join(data_folder, f'image_{timestamp}.jpg')
-            cv2.imwrite(image_path, video)
-
-            # 아두이노 데이터 읽기
-            if ser.in_waiting > 0:
-                arduino_data = ser.readline().decode('utf-8').strip()
-                print(f"Arduino Data: {arduino_data}")  # 데이터 확인용 출력
-
-                # 데이터 파싱
-                data_parts = arduino_data.split(',')
-                if len(data_parts) == 10:
-                    motor1_speed = data_parts[0].split(':')[1]
-                    motor1_dir = data_parts[1].split(':')[1]
-                    motor2_speed = data_parts[2].split(':')[1]
-                    motor2_dir = data_parts[3].split(':')[1]
-                    motor3_speed = data_parts[4].split(':')[1]
-                    motor3_dir = data_parts[5].split(':')[1]
-                    motor4_speed = data_parts[6].split(':')[1]
-                    motor4_dir = data_parts[7].split(':')[1]
-                    servo1_angle = data_parts[8].split(':')[1]
-                    servo2_angle = data_parts[9].split(':')[1]
-
-                    # CSV 파일에 데이터 저장
-                    with open(csv_file, mode='a', newline='') as file:
-                        writer = csv.writer(file)
-                        writer.writerow([timestamp, image_path, motor1_speed, motor1_dir, motor2_speed, motor2_dir, motor3_speed, motor3_dir, motor4_speed, motor4_dir, servo1_angle, servo2_angle, command])
-
-                    frame_count += 1
-
-        # ESC 키를 누르면 루프 종료
-        if cv2.waitKey(1) & 0xFF == 27:  # ESC 키
-            break
-
-data_thread = threading.Thread(target=collect_data)
-data_thread.start()
-
 try:
     while running:
         ret, video = cap.read()
@@ -176,6 +143,18 @@ try:
 
         video = cv2.flip(video, 1)
         cv2.imshow("image", video)
+
+        if collecting_data:
+            timestamp = int(time.time())
+            image_path = os.path.join(data_folder, f'image_{timestamp}.jpg')
+            cv2.imwrite(image_path, video)
+
+            if ser.in_waiting > 0:
+                arduino_data = ser.readline().decode('utf-8').strip()
+                print(f"Arduino Data: {arduino_data}")  # 데이터 확인용 출력
+                save_data(timestamp, image_path, arduino_data)
+
+            time.sleep(0.3)
 
         # ESC 키를 누르면 루프 종료
         if cv2.waitKey(1) & 0xFF == 27:  # ESC 키
