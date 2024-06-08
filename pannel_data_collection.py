@@ -32,43 +32,6 @@ with open(csv_file, mode='w', newline='') as file:
 
 frame_count = 0
 running = True
-### 수정된 파이썬 코드:
-
-```python
-import serial
-import time
-import sys
-import tty
-import termios
-import cv2
-import threading
-import os
-import csv
-
-# 현재 작업 디렉토리 확인
-print("Current working directory:", os.getcwd())
-
-# 시리얼 포트 설정
-ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
-time.sleep(2)  # 아두이노 초기화를 위한 대기 시간
-
-# 데이터 저장 폴더와 파일 설정
-data_folder = 'data'
-try:
-    os.makedirs(data_folder, exist_ok=True)
-    print(f"Data folder created at: {os.path.abspath(data_folder)}")
-except Exception as e:
-    print(f"Error creating data folder: {e}")
-
-csv_file = os.path.join(data_folder, 'dataset.csv')
-
-# CSV 파일 초기화
-with open(csv_file, mode='w', newline='') as file:
-    writer = csv.writer(file)
-    writer.writerow(['timestamp', 'image_path', 'M1_speed', 'M1_dir', 'M2_speed', 'M2_dir', 'M3_speed', 'M3_dir', 'M4_speed', 'M4_dir', 'S1_angle', 'S2_angle', 'command'])
-
-frame_count = 0
-running = True
 collecting_data = False
 command = ''
 lock = threading.Lock()
@@ -100,44 +63,45 @@ def handle_keys():
             running = False
             break
         else:
-            if key == 'w':
-                command = 'F'  # Forward
-            elif key == 's':
-                command = 'B'  # Backward
-            elif key == 'a':
-                command = 'L'  # Move Left
-            elif key == 'd':
-                command = 'R'  # Move Right
-            elif key == 'q':
-                command = 'T'  # Rotate Left
-            elif key == 'e':
-                command = 'Y'  # Rotate Right
-            elif key == 'z':
-                command = 'Q'  # Move Left Forward
-            elif key == 'c':
-                command = 'E'  # Move Right Forward
-            elif key == 'u':
-                command = 'Z'  # Move Left Backward
-            elif key == 'o':
-                command = 'C'  # Move Right Backward
-            elif key == 'x':
-                command = 'S'  # Stop
-            elif key == 'i':
-                command = 'U'  # Servo1 Up
-            elif key == 'k':
-                command = 'D'  # Servo1 Down
-            elif key == 'j':
-                command = 'I'  # Servo2 Up
-            elif key == 'l':
-                command = 'K'  # Servo2 Down
-            elif key == 'm':
-                command = 'A'  # Activate Relay
-            elif key == 'n':
-                command = 'V'  # Deactivate Relay
-
-            if command:
+            if key in 'wsadqezuocxikjlmn':
                 with lock:
-                    ser.write(command.encode())
+                    if key == 'w':
+                        command = 'F'  # Forward
+                    elif key == 's':
+                        command = 'B'  # Backward
+                    elif key == 'a':
+                        command = 'L'  # Move Left
+                    elif key == 'd':
+                        command = 'R'  # Move Right
+                    elif key == 'q':
+                        command = 'T'  # Rotate Left
+                    elif key == 'e':
+                        command = 'Y'  # Rotate Right
+                    elif key == 'z':
+                        command = 'Q'  # Move Left Forward
+                    elif key == 'c':
+                        command = 'E'  # Move Right Forward
+                    elif key == 'u':
+                        command = 'Z'  # Move Left Backward
+                    elif key == 'o':
+                        command = 'C'  # Move Right Backward
+                    elif key == 'x':
+                        command = 'S'  # Stop
+                    elif key == 'i':
+                        command = 'U'  # Servo1 Up
+                    elif key == 'k':
+                        command = 'D'  # Servo1 Down
+                    elif key == 'j':
+                        command = 'I'  # Servo2 Up
+                    elif key == 'l':
+                        command = 'K'  # Servo2 Down
+                    elif key == 'm':
+                        command = 'A'  # Activate Relay
+                    elif key == 'n':
+                        command = 'V'  # Deactivate Relay
+
+                    if command:
+                        ser.write(command.encode())
                 print(f"Command: {command}")
 
 # 데이터 저장 함수
@@ -158,22 +122,25 @@ def save_data():
 
                     data_parts = arduino_data.split(',')
                     if len(data_parts) == 10:
-                        motor1_speed = data_parts[0].split(':')[1]
-                        motor1_dir = data_parts[1].split(':')[1]
-                        motor2_speed = data_parts[2].split(':')[1]
-                        motor2_dir = data_parts[3].split(':')[1]
-                        motor3_speed = data_parts[4].split(':')[1]
-                        motor3_dir = data_parts[5].split(':')[1]
-                        motor4_speed = data_parts[6].split(':')[1]
-                        motor4_dir = data_parts[7].split(':')[1]
-                        servo1_angle = data_parts[8].split(':')[1]
-                        servo2_angle = data_parts[9].split(':')[1]
+                        try:
+                            motor1_speed = data_parts[0].split(':')[1]
+                            motor1_dir = data_parts[1].split(':')[1]
+                            motor2_speed = data_parts[2].split(':')[1]
+                            motor2_dir = data_parts[3].split(':')[1]
+                            motor3_speed = data_parts[4].split(':')[1]
+                            motor3_dir = data_parts[5].split(':')[1]
+                            motor4_speed = data_parts[6].split(':')[1]
+                            motor4_dir = data_parts[7].split(':')[1]
+                            servo1_angle = data_parts[8].split(':')[1]
+                            servo2_angle = data_parts[9].split(':')[1]
 
-                        with open(csv_file, mode='a', newline='') as file:
-                            writer = csv.writer(file)
-                            writer.writerow([timestamp, image_path, motor1_speed, motor1_dir, motor2_speed, motor2_dir, motor3_speed, motor3_dir, motor4_speed, motor4_dir, servo1_angle, servo2_angle, command])
+                            with open(csv_file, mode='a', newline='') as file:
+                                writer = csv.writer(file)
+                                writer.writerow([timestamp, image_path, motor1_speed, motor1_dir, motor2_speed, motor2_dir, motor3_speed, motor3_dir, motor4_speed, motor4_dir, servo1_angle, servo2_angle, command])
 
-                        frame_count += 1
+                            frame_count += 1
+                        except IndexError:
+                            print("Error: Invalid data received from Arduino")
             time.sleep(0.5)
 
 # 카메라 초기화
