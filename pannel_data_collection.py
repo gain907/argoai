@@ -63,51 +63,52 @@ def handle_keys():
             running = False
             break
         else:
-            if key == 'w':
-                command = 'F'  # Forward
-            elif key == 's':
-                command = 'B'  # Backward
-            elif key == 'a':
-                command = 'L'  # Move Left
-            elif key == 'd':
-                command = 'R'  # Move Right
-            elif key == 'q':
-                command = 'T'  # Rotate Left
-            elif key == 'e':
-                command = 'Y'  # Rotate Right
-            elif key == 'z':
-                command = 'Q'  # Move Left Forward
-            elif key == 'c':
-                command = 'E'  # Move Right Forward
-            elif key == 'u':
-                command = 'Z'  # Move Left Backward
-            elif key == 'o':
-                command = 'C'  # Move Right Backward
-            elif key == 'x':
-                command = 'S'  # Stop
-            elif key == 'i':
-                command = 'U'  # Servo1 Up
-            elif key == 'k':
-                command = 'D'  # Servo1 Down
-            elif key == 'j':
-                command = 'I'  # Servo2 Up
-            elif key == 'l':
-                command = 'K'  # Servo2 Down
-            elif key == 'm':
-                command = 'A'  # Activate Relay
-            elif key == 'n':
-                command = 'V'  # Deactivate Relay
-
-            if command:
+            if key in 'wsadqezuocxikjlmn':
                 with lock:
-                    ser.write(command.encode())
-                print(f"Command: {command}")
+                    if key == 'w':
+                        command = 'F'  # Forward
+                    elif key == 's':
+                        command = 'B'  # Backward
+                    elif key == 'a':
+                        command = 'L'  # Move Left
+                    elif key == 'd':
+                        command = 'R'  # Move Right
+                    elif key == 'q':
+                        command = 'T'  # Rotate Left
+                    elif key == 'e':
+                        command = 'Y'  # Rotate Right
+                    elif key == 'z':
+                        command = 'Q'  # Move Left Forward
+                    elif key == 'c':
+                        command = 'E'  # Move Right Forward
+                    elif key == 'u':
+                        command = 'Z'  # Move Left Backward
+                    elif key == 'o':
+                        command = 'C'  # Move Right Backward
+                    elif key == 'x':
+                        command = 'S'  # Stop
+                    elif key == 'i':
+                        command = 'U'  # Servo1 Up
+                    elif key == 'k':
+                        command = 'D'  # Servo1 Down
+                    elif key == 'j':
+                        command = 'I'  # Servo2 Up
+                    elif key == 'l':
+                        command = 'K'  # Servo2 Down
+                    elif key == 'm':
+                        command = 'A'  # Activate Relay
+                    elif key == 'n':
+                        command = 'V'  # Deactivate Relay
+
+                    if command:
+                        ser.write(command.encode())
+                        print(f"Command: {command}")
 
 # 데이터 저장 함수
 def save_data():
     global frame_count, command
     while running:
-        if collecting_data:
+        if collecting_data and command:
             timestamp = int(time.time())
             image_path = os.path.join(data_folder, f'image_{timestamp}.jpg')
             ret, video = cap.read()
@@ -137,7 +138,7 @@ def save_data():
                             writer.writerow([timestamp, image_path, motor1_speed, motor1_dir, motor2_speed, motor2_dir, motor3_speed, motor3_dir, motor4_speed, motor4_dir, servo1_angle, servo2_angle, command])
 
                         frame_count += 1
-            time.sleep(0.3)
+            time.sleep(0.5)
 
 # 카메라 초기화
 cap = cv2.VideoCapture(0)
@@ -177,4 +178,3 @@ finally:
     ser.close()
     key_thread.join()
     data_thread.join()
-ㅍ
