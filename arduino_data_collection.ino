@@ -1,6 +1,5 @@
 #include <Servo.h>
 #include <AFMotor.h>
-#include <SoftwareSerial.h>
 
 // 모터 정의
 AF_DCMotor motor1(1);  // 모터 쉴드 M1 연결
@@ -233,13 +232,13 @@ void sleepRelay() {
 }
 
 void sendStatus() {
-  Serial.print("M1:"); Serial.print(motor1Speed);
+  Serial.print("M1:"); Serial.print(motorSpeed);
   Serial.print(",D1:"); Serial.print(motor1Direction);
-  Serial.print(",M2:"); Serial.print(motor2Speed);
+  Serial.print(",M2:"); Serial.print(motorSpeed);
   Serial.print(",D2:"); Serial.print(motor2Direction);
-  Serial.print(",M3:"); Serial.print(motor3Speed);
+  Serial.print(",M3:"); Serial.print(motorSpeed);
   Serial.print(",D3:"); Serial.print(motor3Direction);
-  Serial.print(",M4:"); Serial.print(motor4Speed);
+  Serial.print(",M4:"); Serial.print(motorSpeed);
   Serial.print(",D4:"); Serial.print(motor4Direction);
   Serial.print(",S1:"); Serial.print(servo1Pos);
   Serial.print(",S2:"); Serial.println(servo2Pos);
