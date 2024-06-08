@@ -16,7 +16,7 @@ ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
 time.sleep(2)  # 아두이노 초기화를 위한 대기 시간
 
 # 데이터 저장 폴더와 파일 설정
-data_folder = '/home/argo/myenv/data'
+data_folder = 'data'
 try:
     os.makedirs(data_folder, exist_ok=True)
     print(f"Data folder created at: {os.path.abspath(data_folder)}")
@@ -95,7 +95,7 @@ def handle_keys():
             collecting_data = True
 
 # 카메라 초기화
-cap = cv2.VideoCapture(0, cv2.CAP_V4L)
+cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
@@ -111,46 +111,52 @@ last_collection_time = time.time()
 
 try:
     while running:
+        ret, video = cap.read()
+        if not ret:
+            print("Error: Could not read frame.")
+            break
+
+        video = cv2.flip(video, 1)
+        cv2.imshow("image", video)
+
         current_time = time.time()
         if collecting_data and (current_time - last_collection_time >= 0.5):
             last_collection_time = current_time
 
-            # 카메라 프레임 캡처 및 저장
-            ret, frame = cap.read()
-            if ret:
-                timestamp = int(time.time())
-                image_path = os.path.join(data_folder, f'image_{timestamp}.jpg')
-                cv2.imwrite(image_path, frame)
+            # 이미지 저장 경로 생성
+            timestamp = int(current_time)
+            image_path = os.path.join(data_folder, f'image_{timestamp}.jpg')
+            cv2.imwrite(image_path, video)
 
-                # 아두이노 데이터 읽기
-                if ser.in_waiting > 0:
-                    arduino_data = ser.readline().decode('utf-8').strip()
-                    print(arduino_data)  # 데이터 확인용 출력
+            # 아두이노 데이터 읽기
+            if ser.in_waiting > 0:
+                arduino_data = ser.readline().decode('utf-8').strip()
+                print(arduino_data)  # 데이터 확인용 출력
 
-                    # 데이터 파싱
-                    data_parts = arduino_data.split(',')
-                    if len(data_parts) == 12:
-                        motor1_speed = data_parts[0].split(':')[1]
-                        motor1_dir = data_parts[1].split(':')[1]
-                        motor2_speed = data_parts[2].split(':')[1]
-                        motor2_dir = data_parts[3].split(':')[1]
-                        motor3_speed = data_parts[4].split(':')[1]
-                        motor3_dir = data_parts[5].split(':')[1]
-                        motor4_speed = data_parts[6].split(':')[1]
-                        motor4_dir = data_parts[7].split(':')[1]
-                        servo1_angle = data_parts[8].split(':')[1]
-                        servo2_angle = data_parts[9].split(':')[1]
+                # 데이터 파싱
+                data_parts = arduino_data.split(',')
+                if len(data_parts) == 12:
+                    motor1_speed = data_parts[0].split(':')[1]
+                    motor1_dir = data_parts[1].split(':')[1]
+                    motor2_speed = data_parts[2].split(':')[1]
+                    motor2_dir = data_parts[3].split(':')[1]
+                    motor3_speed = data_parts[4].split(':')[1]
+                    motor3_dir = data_parts[5].split(':')[1]
+                    motor4_speed = data_parts[6].split(':')[1]
+                    motor4_dir = data_parts[7].split(':')[1]
+                    servo1_angle = data_parts[8].split(':')[1]
+                    servo2_angle = data_parts[9].split(':')[1]
 
-                        # CSV 파일에 데이터 저장
-                        with open(csv_file, mode='a', newline='') as file:
-                            writer = csv.writer(file)
-                            writer.writerow([timestamp, image_path, motor1_speed, motor1_dir, motor2_speed, motor2_dir, motor3_speed, motor3_dir, motor4_speed, motor4_dir, servo1_angle, servo2_angle, command])
+                    # CSV 파일에 데이터 저장
+                    with open(csv_file, mode='a', newline='') as file:
+                        writer = csv.writer(file)
+                        writer.writerow([timestamp, image_path, motor1_speed, motor1_dir, motor2_speed, motor2_dir, motor3_speed, motor3_dir, motor4_speed, motor4_dir, servo1_angle, servo2_angle, command])
 
-                        frame_count += 1
+                    frame_count += 1
 
-    # ESC 키를 누르면 루프 종료
-    if cv2.waitKey(1) & 0xFF == 27:  # ESC 키
-        running = False
+        # ESC 키를 누르면 루프 종료
+        if cv2.waitKey(1) & 0xFF == 27:  # ESC 키
+            running = False
 
 finally:
     # 정리 작업
