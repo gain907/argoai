@@ -53,49 +53,53 @@ def handle_keys():
         key = getKey()
         if key == '1':
             collecting_data = True  # 데이터 수집 시작
+            print("Data collection started")
         elif key == '2':
             collecting_data = False  # 데이터 수집 중지
-        elif key == 'w':
-            command = 'F'  # Forward
-        elif key == 's':
-            command = 'B'  # Backward
-        elif key == 'a':
-            command = 'L'  # Move Left
-        elif key == 'd':
-            command = 'R'  # Move Right
-        elif key == 'q':
-            command = 'T'  # Rotate Left
-        elif key == 'e':
-            command = 'Y'  # Rotate Right
-        elif key == 'z':
-            command = 'Q'  # Move Left Forward
-        elif key == 'c':
-            command = 'E'  # Move Right Forward
-        elif key == 'u':
-            command = 'Z'  # Move Left Backward
-        elif key == 'o':
-            command = 'C'  # Move Right Backward
-        elif key == 'x':
-            command = 'S'  # Stop
-        elif key == 'i':
-            command = 'U'  # Servo1 Up
-        elif key == 'k':
-            command = 'D'  # Servo1 Down
-        elif key == 'j':
-            command = 'I'  # Servo2 Up
-        elif key == 'l':
-            command = 'K'  # Servo2 Down
-        elif key == 'm':
-            command = 'A'  # Activate Relay
-        elif key == 'n':
-            command = 'V'  # Deactivate Relay
+            print("Data collection stopped")
         elif key == 'q':
             command = 'S'  # Stop before quitting
             running = False
             break
+        else:
+            if key == 'w':
+                command = 'F'  # Forward
+            elif key == 's':
+                command = 'B'  # Backward
+            elif key == 'a':
+                command = 'L'  # Move Left
+            elif key == 'd':
+                command = 'R'  # Move Right
+            elif key == 'q':
+                command = 'T'  # Rotate Left
+            elif key == 'e':
+                command = 'Y'  # Rotate Right
+            elif key == 'z':
+                command = 'Q'  # Move Left Forward
+            elif key == 'c':
+                command = 'E'  # Move Right Forward
+            elif key == 'u':
+                command = 'Z'  # Move Left Backward
+            elif key == 'o':
+                command = 'C'  # Move Right Backward
+            elif key == 'x':
+                command = 'S'  # Stop
+            elif key == 'i':
+                command = 'U'  # Servo1 Up
+            elif key == 'k':
+                command = 'D'  # Servo1 Down
+            elif key == 'j':
+                command = 'I'  # Servo2 Up
+            elif key == 'l':
+                command = 'K'  # Servo2 Down
+            elif key == 'm':
+                command = 'A'  # Activate Relay
+            elif key == 'n':
+                command = 'V'  # Deactivate Relay
 
-        if command:
-            ser.write(command.encode())
+            if command:
+                ser.write(command.encode())
+                print(f"Command: {command}")
 
 # 카메라 초기화
 cap = cv2.VideoCapture(0)
@@ -110,19 +114,20 @@ if not cap.isOpened():
 key_thread = threading.Thread(target=handle_keys)
 key_thread.start()
 
-try:
+def collect_data():
+    global frame_count, command
     while running:
-        ret, video = cap.read()
-        if not ret:
-            print("Error: Could not read frame.")
-            break
-
-        video = cv2.flip(video, 1)
-        cv2.imshow("image", video)
-
         if collecting_data:
             # 0.3초마다 데이터 수집
             time.sleep(0.3)
+
+            ret, video = cap.read()
+            if not ret:
+                print("Error: Could not read frame.")
+                break
+
+            video = cv2.flip(video, 1)
+            cv2.imshow("image", video)
 
             # 이미지 저장 경로 생성
             timestamp = int(time.time())
@@ -132,7 +137,7 @@ try:
             # 아두이노 데이터 읽기
             if ser.in_waiting > 0:
                 arduino_data = ser.readline().decode('utf-8').strip()
-                print(arduino_data)  # 데이터 확인용 출력
+                print(f"Arduino Data: {arduino_data}")  # 데이터 확인용 출력
 
                 # 데이터 파싱
                 data_parts = arduino_data.split(',')
@@ -154,6 +159,23 @@ try:
                         writer.writerow([timestamp, image_path, motor1_speed, motor1_dir, motor2_speed, motor2_dir, motor3_speed, motor3_dir, motor4_speed, motor4_dir, servo1_angle, servo2_angle, command])
 
                     frame_count += 1
+
+        # ESC 키를 누르면 루프 종료
+        if cv2.waitKey(1) & 0xFF == 27:  # ESC 키
+            break
+
+data_thread = threading.Thread(target=collect_data)
+data_thread.start()
+
+try:
+    while running:
+        ret, video = cap.read()
+        if not ret:
+            print("Error: Could not read frame.")
+            break
+
+        video = cv2.flip(video, 1)
+        cv2.imshow("image", video)
 
         # ESC 키를 누르면 루프 종료
         if cv2.waitKey(1) & 0xFF == 27:  # ESC 키
