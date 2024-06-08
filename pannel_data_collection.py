@@ -1,15 +1,20 @@
+import os
+import sys
+
+# 스크립트의 디렉토리를 현재 작업 디렉토리로 변경
+script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+os.chdir(script_dir)
+
+print("Current working directory:", os.getcwd())
+
+# 이후의 코드를 작성합니다.
 import serial
 import time
-import sys
 import tty
 import termios
 import cv2
 import threading
-import os
 import csv
-
-# 현재 작업 디렉토리 확인
-print("Current working directory:", os.getcwd())
 
 # 시리얼 포트 설정
 ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
@@ -63,45 +68,44 @@ def handle_keys():
             running = False
             break
         else:
-            if key in 'wsadqezuocxikjlmn':
-                with lock:
-                    if key == 'w':
-                        command = 'F'  # Forward
-                    elif key == 's':
-                        command = 'B'  # Backward
-                    elif key == 'a':
-                        command = 'L'  # Move Left
-                    elif key == 'd':
-                        command = 'R'  # Move Right
-                    elif key == 'q':
-                        command = 'T'  # Rotate Left
-                    elif key == 'e':
-                        command = 'Y'  # Rotate Right
-                    elif key == 'z':
-                        command = 'Q'  # Move Left Forward
-                    elif key == 'c':
-                        command = 'E'  # Move Right Forward
-                    elif key == 'u':
-                        command = 'Z'  # Move Left Backward
-                    elif key == 'o':
-                        command = 'C'  # Move Right Backward
-                    elif key == 'x':
-                        command = 'S'  # Stop
-                    elif key == 'i':
-                        command = 'U'  # Servo1 Up
-                    elif key == 'k':
-                        command = 'D'  # Servo1 Down
-                    elif key == 'j':
-                        command = 'I'  # Servo2 Up
-                    elif key == 'l':
-                        command = 'K'  # Servo2 Down
-                    elif key == 'm':
-                        command = 'A'  # Activate Relay
-                    elif key == 'n':
-                        command = 'V'  # Deactivate Relay
+            if key == 'w':
+                command = 'F'  # Forward
+            elif key == 's':
+                command = 'B'  # Backward
+            elif key == 'a':
+                command = 'L'  # Move Left
+            elif key == 'd':
+                command = 'R'  # Move Right
+            elif key == 'q':
+                command = 'T'  # Rotate Left
+            elif key == 'e':
+                command = 'Y'  # Rotate Right
+            elif key == 'z':
+                command = 'Q'  # Move Left Forward
+            elif key == 'c':
+                command = 'E'  # Move Right Forward
+            elif key == 'u':
+                command = 'Z'  # Move Left Backward
+            elif key == 'o':
+                command = 'C'  # Move Right Backward
+            elif key == 'x':
+                command = 'S'  # Stop
+            elif key == 'i':
+                command = 'U'  # Servo1 Up
+            elif key == 'k':
+                command = 'D'  # Servo1 Down
+            elif key == 'j':
+                command = 'I'  # Servo2 Up
+            elif key == 'l':
+                command = 'K'  # Servo2 Down
+            elif key == 'm':
+                command = 'A'  # Activate Relay
+            elif key == 'n':
+                command = 'V'  # Deactivate Relay
 
-                    if command:
-                        ser.write(command.encode())
+            if command:
+                with lock:
+                    ser.write(command.encode())
                 print(f"Command: {command}")
 
 # 데이터 저장 함수
@@ -122,25 +126,22 @@ def save_data():
 
                     data_parts = arduino_data.split(',')
                     if len(data_parts) == 10:
-                        try:
-                            motor1_speed = data_parts[0].split(':')[1]
-                            motor1_dir = data_parts[1].split(':')[1]
-                            motor2_speed = data_parts[2].split(':')[1]
-                            motor2_dir = data_parts[3].split(':')[1]
-                            motor3_speed = data_parts[4].split(':')[1]
-                            motor3_dir = data_parts[5].split(':')[1]
-                            motor4_speed = data_parts[6].split(':')[1]
-                            motor4_dir = data_parts[7].split(':')[1]
-                            servo1_angle = data_parts[8].split(':')[1]
-                            servo2_angle = data_parts[9].split(':')[1]
+                        motor1_speed = data_parts[0].split(':')[1]
+                        motor1_dir = data_parts[1].split(':')[1]
+                        motor2_speed = data_parts[2].split(':')[1]
+                        motor2_dir = data_parts[3].split(':')[1]
+                        motor3_speed = data_parts[4].split(':')[1]
+                        motor3_dir = data_parts[5].split(':')[1]
+                        motor4_speed = data_parts[6].split(':')[1]
+                        motor4_dir = data_parts[7].split(':')[1]
+                        servo1_angle = data_parts[8].split(':')[1]
+                        servo2_angle = data_parts[9].split(':')[1]
 
-                            with open(csv_file, mode='a', newline='') as file:
-                                writer = csv.writer(file)
-                                writer.writerow([timestamp, image_path, motor1_speed, motor1_dir, motor2_speed, motor2_dir, motor3_speed, motor3_dir, motor4_speed, motor4_dir, servo1_angle, servo2_angle, command])
+                        with open(csv_file, mode='a', newline='') as file:
+                            writer = csv.writer(file)
+                            writer.writerow([timestamp, image_path, motor1_speed, motor1_dir, motor2_speed, motor2_dir, motor3_speed, motor3_dir, motor4_speed, motor4_dir, servo1_angle, servo2_angle, command])
 
-                            frame_count += 1
-                        except IndexError:
-                            print("Error: Invalid data received from Arduino")
+                        frame_count += 1
             time.sleep(0.5)
 
 # 카메라 초기화
