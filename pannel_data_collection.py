@@ -99,27 +99,45 @@ def handle_keys():
                 command = 'V'  # Deactivate Relay
 
             if command:
-                ser.write(command.encode())
+                with lock:
+                    ser.write(command.encode())
                 print(f"Command: {command}")
 
 # 데이터 저장 함수
-def save_data(timestamp, image_path, arduino_data):
-    data_parts = arduino_data.split(',')
-    if len(data_parts) == 10:
-        motor1_speed = data_parts[0].split(':')[1]
-        motor1_dir = data_parts[1].split(':')[1]
-        motor2_speed = data_parts[2].split(':')[1]
-        motor2_dir = data_parts[3].split(':')[1]
-        motor3_speed = data_parts[4].split(':')[1]
-        motor3_dir = data_parts[5].split(':')[1]
-        motor4_speed = data_parts[6].split(':')[1]
-        motor4_dir = data_parts[7].split(':')[1]
-        servo1_angle = data_parts[8].split(':')[1]
-        servo2_angle = data_parts[9].split(':')[1]
+def save_data():
+    global frame_count, command
+    while running:
+        if collecting_data:
+            timestamp = int(time.time())
+            image_path = os.path.join(data_folder, f'image_{timestamp}.jpg')
+            ret, video = cap.read()
+            if ret:
+                video = cv2.flip(video, 1)
+                cv2.imwrite(image_path, video)
 
-        with open(csv_file, mode='a', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow([timestamp, image_path, motor1_speed, motor1_dir, motor2_speed, motor2_dir, motor3_speed, motor3_dir, motor4_speed, motor4_dir, servo1_angle, servo2_angle, command])
+                if ser.in_waiting > 0:
+                    arduino_data = ser.readline().decode('utf-8').strip()
+                    print(f"Arduino Data: {arduino_data}")  # 데이터 확인용 출력
+
+                    data_parts = arduino_data.split(',')
+                    if len(data_parts) == 10:
+                        motor1_speed = data_parts[0].split(':')[1]
+                        motor1_dir = data_parts[1].split(':')[1]
+                        motor2_speed = data_parts[2].split(':')[1]
+                        motor2_dir = data_parts[3].split(':')[1]
+                        motor3_speed = data_parts[4].split(':')[1]
+                        motor3_dir = data_parts[5].split(':')[1]
+                        motor4_speed = data_parts[6].split(':')[1]
+                        motor4_dir = data_parts[7].split(':')[1]
+                        servo1_angle = data_parts[8].split(':')[1]
+                        servo2_angle = data_parts[9].split(':')[1]
+
+                        with open(csv_file, mode='a', newline='') as file:
+                            writer = csv.writer(file)
+                            writer.writerow([timestamp, image_path, motor1_speed, motor1_dir, motor2_speed, motor2_dir, motor3_speed, motor3_dir, motor4_speed, motor4_dir, servo1_angle, servo2_angle, command])
+
+                        frame_count += 1
+            time.sleep(0.3)
 
 # 카메라 초기화
 cap = cv2.VideoCapture(0)
@@ -134,6 +152,10 @@ if not cap.isOpened():
 key_thread = threading.Thread(target=handle_keys)
 key_thread.start()
 
+# 데이터 저장을 처리하는 스레드 시작
+data_thread = threading.Thread(target=save_data)
+data_thread.start()
+
 try:
     while running:
         ret, video = cap.read()
@@ -144,18 +166,6 @@ try:
         video = cv2.flip(video, 1)
         cv2.imshow("image", video)
 
-        if collecting_data:
-            timestamp = int(time.time())
-            image_path = os.path.join(data_folder, f'image_{timestamp}.jpg')
-            cv2.imwrite(image_path, video)
-
-            if ser.in_waiting > 0:
-                arduino_data = ser.readline().decode('utf-8').strip()
-                print(f"Arduino Data: {arduino_data}")  # 데이터 확인용 출력
-                save_data(timestamp, image_path, arduino_data)
-
-            time.sleep(0.3)
-
         # ESC 키를 누르면 루프 종료
         if cv2.waitKey(1) & 0xFF == 27:  # ESC 키
             running = False
@@ -165,3 +175,6 @@ finally:
     cap.release()
     cv2.destroyAllWindows()
     ser.close()
+    key_thread.join()
+    data_thread.join()
+ㅍ
