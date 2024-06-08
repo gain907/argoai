@@ -32,6 +32,7 @@ with open(csv_file, mode='w', newline='') as file:
 
 frame_count = 0
 running = True
+collecting_data = False
 command = ''
 
 # 키보드 입력 함수
@@ -47,10 +48,14 @@ def getKey():
 
 # 키보드 입력을 처리하는 함수
 def handle_keys():
-    global running, frame_count, command
+    global running, frame_count, command, collecting_data
     while running:
         key = getKey()
-        if key == 'w':
+        if key == '1':
+            collecting_data = True  # 데이터 수집 시작
+        elif key == '2':
+            collecting_data = False  # 데이터 수집 중지
+        elif key == 'w':
             command = 'F'  # Forward
         elif key == 's':
             command = 'B'  # Backward
@@ -105,8 +110,6 @@ if not cap.isOpened():
 key_thread = threading.Thread(target=handle_keys)
 key_thread.start()
 
-last_collection_time = time.time()
-
 try:
     while running:
         ret, video = cap.read()
@@ -117,12 +120,12 @@ try:
         video = cv2.flip(video, 1)
         cv2.imshow("image", video)
 
-        current_time = time.time()
-        if current_time - last_collection_time >= 1:
-            last_collection_time = current_time
+        if collecting_data:
+            # 0.3초마다 데이터 수집
+            time.sleep(0.3)
 
             # 이미지 저장 경로 생성
-            timestamp = int(current_time)
+            timestamp = int(time.time())
             image_path = os.path.join(data_folder, f'image_{timestamp}.jpg')
             cv2.imwrite(image_path, video)
 
@@ -133,7 +136,7 @@ try:
 
                 # 데이터 파싱
                 data_parts = arduino_data.split(',')
-                if len(data_parts) == 12:
+                if len(data_parts) == 10:
                     motor1_speed = data_parts[0].split(':')[1]
                     motor1_dir = data_parts[1].split(':')[1]
                     motor2_speed = data_parts[2].split(':')[1]
