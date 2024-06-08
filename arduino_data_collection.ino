@@ -1,5 +1,6 @@
 #include <Servo.h>
 #include <AFMotor.h>
+#include <SoftwareSerial.h>
 
 // 모터 정의
 AF_DCMotor motor1(1);  // 모터 쉴드 M1 연결
@@ -25,11 +26,14 @@ char motor4Direction = 'S';
 // 릴레이 핀 정의
 const int relayPin = 14;  // A0 = D14
 
+unsigned long lastSendTime = 0;
+const unsigned long sendInterval = 500; // 500ms
+
 void setup() {
   Serial.begin(9600);  // 시리얼 통신 시작
 
   servo1.attach(9);   // 서보 모터 1 핀
-  servo2.attach(10);   // 서보 모터 2 핀
+  servo2.attach(10);  // 서보 모터 2 핀
   servo1.write(servo1Pos);
   servo2.write(servo2Pos);
 
@@ -48,6 +52,12 @@ void loop() {
 
     // 모터와 서보 모터 상태 전송
     sendStatus();
+  }
+
+  // 주기적으로 상태 전송
+  if (millis() - lastSendTime >= sendInterval) {
+    sendStatus();
+    lastSendTime = millis();
   }
 }
 
