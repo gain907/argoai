@@ -8,22 +8,32 @@ import threading
 import os
 import csv
 
+# 현재 작업 디렉토리 확인
+print("Current working directory:", os.getcwd())
+
 # 시리얼 포트 설정
 ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
 time.sleep(2)  # 아두이노 초기화를 위한 대기 시간
 
 # 데이터 저장 폴더와 파일 설정
-data_folder = 'data'
-os.makedirs(data_folder, exist_ok=True)
+data_folder = '/home/argo/myenv/data'
+try:
+    os.makedirs(data_folder, exist_ok=True)
+    print(f"Data folder created at: {os.path.abspath(data_folder)}")
+except Exception as e:
+    print(f"Error creating data folder: {e}")
+
 csv_file = os.path.join(data_folder, 'dataset.csv')
 
 # CSV 파일 초기화
 with open(csv_file, mode='w', newline='') as file:
     writer = csv.writer(file)
-    writer.writerow(['image_path', 'M1_speed', 'M1_dir', 'M2_speed', 'M2_dir', 'M3_speed', 'M3_dir', 'M4_speed', 'M4_dir', 'S1_angle', 'S2_angle', 'command'])
+    writer.writerow(['timestamp', 'image_path', 'M1_speed', 'M1_dir', 'M2_speed', 'M2_dir', 'M3_speed', 'M3_dir', 'M4_speed', 'M4_dir', 'S1_angle', 'S2_angle', 'command'])
 
 frame_count = 0
 running = True
+collecting_data = False
+command = ''
 
 # 키보드 입력 함수
 def getKey():
@@ -38,10 +48,9 @@ def getKey():
 
 # 키보드 입력을 처리하는 함수
 def handle_keys():
-    global running, frame_count
+    global running, frame_count, command, collecting_data
     while running:
         key = getKey()
-        command = ''
         if key == 'w':
             command = 'F'  # Forward
         elif key == 's':
@@ -83,11 +92,34 @@ def handle_keys():
 
         if command:
             ser.write(command.encode())
+            collecting_data = True
+
+# 카메라 초기화
+cap = cv2.VideoCapture(0, cv2.CAP_V4L)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+
+if not cap.isOpened():
+    print("Error: Could not open video stream.")
+    exit()
+
+# 키보드 입력을 처리하는 스레드 시작
+key_thread = threading.Thread(target=handle_keys)
+key_thread.start()
+
+last_collection_time = time.time()
+
+try:
+    while running:
+        current_time = time.time()
+        if collecting_data and (current_time - last_collection_time >= 0.5):
+            last_collection_time = current_time
 
             # 카메라 프레임 캡처 및 저장
             ret, frame = cap.read()
             if ret:
-                image_path = os.path.join(data_folder, f'image_{frame_count}.jpg')
+                timestamp = int(time.time())
+                image_path = os.path.join(data_folder, f'image_{timestamp}.jpg')
                 cv2.imwrite(image_path, frame)
 
                 # 아두이노 데이터 읽기
@@ -112,39 +144,16 @@ def handle_keys():
                         # CSV 파일에 데이터 저장
                         with open(csv_file, mode='a', newline='') as file:
                             writer = csv.writer(file)
-                            writer.writerow([image_path, motor1_speed, motor1_dir, motor2_speed, motor2_dir, motor3_speed, motor3_dir, motor4_speed, motor4_dir, servo1_angle, servo2_angle, command])
+                            writer.writerow([timestamp, image_path, motor1_speed, motor1_dir, motor2_speed, motor2_dir, motor3_speed, motor3_dir, motor4_speed, motor4_dir, servo1_angle, servo2_angle, command])
 
                         frame_count += 1
 
-# 카메라 초기화
-cap = cv2.VideoCapture(0, cv2.CAP_V4L)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-
-if not cap.isOpened():
-    print("Error: Could not open video stream.")
-    exit()
-
-# 키보드 입력을 처리하는 스레드 시작
-key_thread = threading.Thread(target=handle_keys)
-key_thread.start()
-
-while running:
-    # 카메라 프레임 읽기
-    ret, video = cap.read()
-    if not ret:
-        print("Error: Could not read frame.")
-        break
-
-    video = cv2.flip(video, 1)
-    cv2.imshow("image", video)
-
-    # 'ESC' 키를 누르면 루프 종료
+    # ESC 키를 누르면 루프 종료
     if cv2.waitKey(1) & 0xFF == 27:  # ESC 키
         running = False
-        break
 
-# 정리 작업
-cap.release()
-cv2.destroyAllWindows()
-ser.close()
+finally:
+    # 정리 작업
+    cap.release()
+    cv2.destroyAllWindows()
+    ser.close()
