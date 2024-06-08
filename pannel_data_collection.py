@@ -32,7 +32,6 @@ with open(csv_file, mode='w', newline='') as file:
 
 frame_count = 0
 running = True
-collecting_data = False
 command = ''
 
 # 키보드 입력 함수
@@ -48,7 +47,7 @@ def getKey():
 
 # 키보드 입력을 처리하는 함수
 def handle_keys():
-    global running, frame_count, command, collecting_data
+    global running, frame_count, command
     while running:
         key = getKey()
         if key == 'w':
@@ -92,7 +91,6 @@ def handle_keys():
 
         if command:
             ser.write(command.encode())
-            collecting_data = True
 
 # 카메라 초기화
 cap = cv2.VideoCapture(0)
@@ -120,7 +118,7 @@ try:
         cv2.imshow("image", video)
 
         current_time = time.time()
-        if collecting_data and (current_time - last_collection_time >= 0.5):
+        if current_time - last_collection_time >= 1:
             last_collection_time = current_time
 
             # 이미지 저장 경로 생성
