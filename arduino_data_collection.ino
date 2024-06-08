@@ -33,7 +33,7 @@ void setup() {
   Serial.begin(9600);  // 시리얼 통신 시작
 
   servo1.attach(9);   // 서보 모터 1 핀
-  servo2.attach(10);  // 서보 모터 2 핀
+  servo2.attach(10);   // 서보 모터 2 핀
   servo1.write(servo1Pos);
   servo2.write(servo2Pos);
 
