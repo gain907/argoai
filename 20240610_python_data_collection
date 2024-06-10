@@ -22,31 +22,6 @@ time.sleep(2)  # 아두이노 초기화를 위한 대기 시간
 data_folder = 'data'
 try:
     os.makedirs(data_folder, exist_ok=True)
-    print(f"Data folder created at: {os```python
-import os
-import sys
-import serial
-import time
-import tty
-import termios
-import cv2
-import threading
-import csv
-
-# 스크립트의 디렉토리를 현재 작업 디렉토리로 변경
-script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-os.chdir(script_dir)
-
-print("Current working directory:", os.getcwd())
-
-# 시리얼 포트 설정
-ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
-time.sleep(2)  # 아두이노 초기화를 위한 대기 시간
-
-# 데이터 저장 폴더와 파일 설정
-data_folder = 'data'
-try:
-    os.makedirs(data_folder, exist_ok=True)
     print(f"Data folder created at: {os.path.abspath(data_folder)}")
 except Exception as e:
     print(f"Error creating data folder: {e}")
@@ -136,36 +111,45 @@ def save_data():
     global frame_count, command
     while running:
         if collecting_data:
-            timestamp = int(time.time())
+            timestamp = int(time.time() * 1000)  # 밀리초 단위 타임스탬프 사용
             image_path = os.path.join(data_folder, f'image_{timestamp}.jpg')
             ret, video = cap.read()
             if ret:
                 video = cv2.flip(video, 1)
                 cv2.imwrite(image_path, video)
+                
+                arduino_data = ""
+                while ser.in_waiting > 0:
+                    try:
+                        arduino_data += ser.readline().decode('utf-8').strip()
+                    except UnicodeDecodeError:
+                        continue
 
-                if ser.in_waiting > 0:
-                    arduino_data = ser.readline().decode('utf-8').strip()
+                if arduino_data:
                     print(f"Arduino Data: {arduino_data}")  # 데이터 확인용 출력
-                    
                     data_parts = arduino_data.split(',')
                     print(f"Arduino data len: {len(data_parts)}")  # 데이터 확인용 출력
                     if len(data_parts) == 10:
-                        motor1_speed = data_parts[0].split(':')[1]
-                        motor1_dir = data_parts[1].split(':')[1]
-                        motor2_speed = data_parts[2].split(':')[1]
-                        motor2_dir = data_parts[3].split(':')[1]
-                        motor3_speed = data_parts[4].split(':')[1]
-                        motor3_dir = data_parts[5].split(':')[1]
-                        motor4_speed = data_parts[6].split(':')[1]
-                        motor4_dir = data_parts[7].split(':')[1]
-                        servo1_angle = data_parts[8].split(':')[1]
-                        servo2_angle = data_parts[9].split(':')[1]
+                        try:
+                            motor1_speed = data_parts[0].split(':')[1]
+                            motor1_dir = data_parts[1].split(':')[1]
+                            motor2_speed = data_parts[2].split(':')[1]
+                            motor2_dir = data_parts[3].split(':')[1]
+                            motor3_speed = data_parts[4].split(':')[1]
+                            motor3_dir = data_parts[5].split(':')[1]
+                            motor4_speed = data_parts[6].split(':')[1]
+                            motor4_dir = data_parts[7].split(':')[1]
+                            servo1_angle = data_parts[8].split(':')[1]
+                            servo2_angle = data_parts[9].split(':')[1]
 
-                        with open(csv_file, mode='a', newline='') as file:
-                            writer = csv.writer(file)
-                            writer.writerow([timestamp, image_path, motor1_speed, motor1_dir, motor2_speed, motor2_dir, motor3_speed, motor3_dir, motor4_speed, motor4_dir, servo1_angle, servo2_angle, command])
+                            with open(csv_file, mode='a', newline='') as file:
+                                writer = csv.writer(file)
+                                writer.writerow([timestamp, image_path, motor1_speed, motor1_dir, motor2_speed, motor2_dir, motor3_speed, motor3_dir, motor4_speed, motor4_dir, servo1_angle, servo2_angle, command])
 
-                        frame_count += 1
+                            frame_count += 1
+                        except IndexError as e:
+                            print(f"Error parsing Arduino data: {e}")
+
             time.sleep(0.5)
 
 # 카메라 초기화
