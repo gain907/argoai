@@ -33,11 +33,13 @@ with open(csv_file, mode='w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(['timestamp', 'image_path', 'command'])
 
+frame_count = 0
 running = True
 collecting_data = False
 command = ''
 lock = threading.Lock()
 last_command_time = 0
+last_key = None
 
 # 키보드 입력 함수
 def getKey():
@@ -52,11 +54,12 @@ def getKey():
 
 # 키보드 입력을 처리하는 함수
 def handle_keys():
-    global running, command, collecting_data, last_command_time
+    global running, command, collecting_data, last_command_time, last_key
     while running:
         key = getKey()
         if key == '1':
-            collecting_data = False
+            collecting_data = True
+            last_key = None
             print("Ready to collect data")
         elif key == '2' or key == 'q':
             collecting_data = False
@@ -66,6 +69,7 @@ def handle_keys():
                 running = False
         else:
             if collecting_data:
+                last_key = key
                 if key == 'w':
                     command = 'F'  # Forward
                 elif key == 's':
@@ -107,9 +111,9 @@ def handle_keys():
 
 # 데이터를 저장하는 함수
 def save_data():
-    global command, collecting_data, last_command_time
+    global command, collecting_data, last_command_time, last_key
     while running:
-        if collecting_data and (time.time() - last_command_time >= 0.5):
+        if collecting_data and last_key and (time.time() - last_command_time >= 0.5):
             last_command_time = time.time()
             timestamp = int(time.time() * 1000)
             image_path = os.path.join(data_folder, f'image_{timestamp}.jpg')
