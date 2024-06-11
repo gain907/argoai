@@ -34,9 +34,9 @@ with open(csv_file, mode='w', newline='') as file:
     writer.writerow(['timestamp', 'image_path', 'command'])
 
 running = True
+collecting_data = False
 command = ''
 lock = threading.Lock()
-collecting_data = False
 last_command_time = 0
 
 # 키보드 입력 함수
@@ -55,51 +55,55 @@ def handle_keys():
     global running, command, collecting_data, last_command_time
     while running:
         key = getKey()
-        if key == 'q':
-            command = 'S'  # Stop before quitting
-            running = False
-            break
+        if key == '1':
+            collecting_data = False
+            print("Ready to collect data")
+        elif key == '2' or key == 'q':
+            collecting_data = False
+            print("Data collection stopped")
+            if key == 'q':
+                command = 'S'
+                running = False
         else:
-            if key == 'w':
-                command = 'F'  # Forward
-            elif key == 's':
-                command = 'B'  # Backward
-            elif key == 'a':
-                command = 'L'  # Move Left
-            elif key == 'd':
-                command = 'R'  # Move Right
-            elif key == 'q':
-                command = 'T'  # Rotate Left
-            elif key == 'e':
-                command = 'Y'  # Rotate Right
-            elif key == 'z':
-                command = 'Q'  # Move Left Forward
-            elif key == 'c':
-                command = 'E'  # Move Right Forward
-            elif key == 'u':
-                command = 'Z'  # Move Left Backward
-            elif key == 'o':
-                command = 'C'  # Move Right Backward
-            elif key == 'x':
-                command = 'S'  # Stop
-            elif key == 'i':
-                command = 'U'  # Servo1 Up
-            elif key == 'k':
-                command = 'D'  # Servo1 Down
-            elif key == 'j':
-                command = 'I'  # Servo2 Up
-            elif key == 'l':
-                command = 'K'  # Servo2 Down
-            elif key == 'm':
-                command = 'A'  # Activate Relay
-            elif key == 'n':
-                command = 'V'  # Deactivate Relay
+            if collecting_data:
+                if key == 'w':
+                    command = 'F'  # Forward
+                elif key == 's':
+                    command = 'B'  # Backward
+                elif key == 'a':
+                    command = 'L'  # Move Left
+                elif key == 'd':
+                    command = 'R'  # Move Right
+                elif key == 'q':
+                    command = 'T'  # Rotate Left
+                elif key == 'e':
+                    command = 'Y'  # Rotate Right
+                elif key == 'z':
+                    command = 'Q'  # Move Left Forward
+                elif key == 'c':
+                    command = 'E'  # Move Right Forward
+                elif key == 'u':
+                    command = 'Z'  # Move Left Backward
+                elif key == 'o':
+                    command = 'C'  # Move Right Backward
+                elif key == 'x':
+                    command = 'S'  # Stop
+                elif key == 'i':
+                    command = 'U'  # Servo1 Up
+                elif key == 'k':
+                    command = 'D'  # Servo1 Down
+                elif key == 'j':
+                    command = 'I'  # Servo2 Up
+                elif key == 'l':
+                    command = 'K'  # Servo2 Down
+                elif key == 'm':
+                    command = 'A'  # Activate Relay
+                elif key == 'n':
+                    command = 'V'  # Deactivate Relay
 
-            collecting_data = True
-            last_command_time = time.time()
-            with lock:
-                ser.write(command.encode())
-            print(f"Command: {command}")
+                with lock:
+                    ser.write(command.encode())
+                print(f"Command: {command}")
 
 # 데이터를 저장하는 함수
 def save_data():
