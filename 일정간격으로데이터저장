@@ -68,46 +68,45 @@ def handle_keys():
                 command = 'S'
                 running = False
         else:
-            if collecting_data:
-                last_key = key
-                if key == 'w':
-                    command = 'F'  # Forward
-                elif key == 's':
-                    command = 'B'  # Backward
-                elif key == 'a':
-                    command = 'L'  # Move Left
-                elif key == 'd':
-                    command = 'R'  # Move Right
-                elif key == 'q':
-                    command = 'T'  # Rotate Left
-                elif key == 'e':
-                    command = 'Y'  # Rotate Right
-                elif key == 'z':
-                    command = 'Q'  # Move Left Forward
-                elif key == 'c':
-                    command = 'E'  # Move Right Forward
-                elif key == 'u':
-                    command = 'Z'  # Move Left Backward
-                elif key == 'o':
-                    command = 'C'  # Move Right Backward
-                elif key == 'x':
-                    command = 'S'  # Stop
-                elif key == 'i':
-                    command = 'U'  # Servo1 Up
-                elif key == 'k':
-                    command = 'D'  # Servo1 Down
-                elif key == 'j':
-                    command = 'I'  # Servo2 Up
-                elif key == 'l':
-                    command = 'K'  # Servo2 Down
-                elif key == 'm':
-                    command = 'A'  # Activate Relay
-                elif key == 'n':
-                    command = 'V'  # Deactivate Relay
+            last_key = key
+            if key == 'w':
+                command = 'F'  # Forward
+            elif key == 's':
+                command = 'B'  # Backward
+            elif key == 'a':
+                command = 'L'  # Move Left
+            elif key == 'd':
+                command = 'R'  # Move Right
+            elif key == 'q':
+                command = 'T'  # Rotate Left
+            elif key == 'e':
+                command = 'Y'  # Rotate Right
+            elif key == 'z':
+                command = 'Q'  # Move Left Forward
+            elif key == 'c':
+                command = 'E'  # Move Right Forward
+            elif key == 'u':
+                command = 'Z'  # Move Left Backward
+            elif key == 'o':
+                command = 'C'  # Move Right Backward
+            elif key == 'x':
+                command = 'S'  # Stop
+            elif key == 'i':
+                command = 'U'  # Servo1 Up
+            elif key == 'k':
+                command = 'D'  # Servo1 Down
+            elif key == 'j':
+                command = 'I'  # Servo2 Up
+            elif key == 'l':
+                command = 'K'  # Servo2 Down
+            elif key == 'm':
+                command = 'A'  # Activate Relay
+            elif key == 'n':
+                command = 'V'  # Deactivate Relay
 
-                with lock:
-                    ser.write(command.encode())
-                print(f"Command: {command}")
+            with lock:
+                ser.write(command.encode())
+            print(f"Command: {command}")
 
 # 데이터를 저장하는 함수
 def save_data():
