@@ -3,7 +3,6 @@ import tensorflow as tf
 import cv2
 import serial
 import time
-import pandas as pd
 
 # CNN 모델 불러오기
 model_path = '/content/drive/MyDrive/Honam_Project/cnn_model.h5'
@@ -14,46 +13,7 @@ ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
 time.sleep(2)  # Arduino 초기화 시간 대기
 
 # 클래스 레이블 설정
-label_dict = {0:'B', 1:'F', 2:'L', 3:'R', 4:'S'}
-# CSV 파일 경로
-csv_path = '/content/drive/MyDrive/Honam_Project/dataset.csv'
-
-# 이미지 전처리 함수
-def preprocess_image(image_path):
-    image = cv2.imread(image_path)
-    if image is None:
-        raise ValueError(f"이미지를 로드할 수 없습니다: {image_path}")
-
-    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
-    # 경계선 감지
-    edges = cv2.Canny(gray_image, threshold1=50, threshold2=150)
-    
-    # 이진화
-    _, binary_image = cv2.threshold(edges, 127, 255, cv2.THRESH_BINARY)
-    
-    resized = cv2.resize(binary_image, (224, 224))
-    normalized = resized / 255.0
-    reshaped = np.reshape(normalized, (1, 224, 224, 1))
-    return reshaped
-
-# CSV 파일 로드 및 이미지와 레이블 매핑
-data = pd.read_csv(csv_path, names=['timestamp', 'image_path', 'command'])
-images = []
-labels = []
-
-for index, row in data.iterrows():
-    image_path = row['image_path']
-    label = row['command']
-    try:
-        image = preprocess_image(image_path)
-        images.append(image)
-        labels.append(label)
-    except ValueError as e:
-        print(e)
-
-images = np.array(images)
-labels = np.array(labels)
+label_dict = {0: 'F', 1: 'L', 2: 'R'}
 
 # 웹캠 초기화
 cap = cv2.VideoCapture(0)
@@ -63,6 +23,19 @@ cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 224)
 if not cap.isOpened():
     print("Error: Could not open video stream.")
     exit()
+
+def preprocess_image(frame):
+    gray_image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    
+    # 경계선 감지
+    edges = cv2.Canny(gray_image, threshold1=50, threshold2=150)
+    
+    # 이진화
+    _, binary_image = cv2.threshold(edges, 127, 255, cv2.THRESH_BINARY)
+    
+    resized = cv2.resize(binary_image, (224, 224))
+    reshaped = np.reshape(resized, (1, 224, 224, 1))
+    return reshaped
 
 try:
     while True:
