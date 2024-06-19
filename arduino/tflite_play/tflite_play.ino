@@ -2,13 +2,13 @@
 #include <AFMotor.h>
 #include <SoftwareSerial.h> 
 
-// ?? ??
-AF_DCMotor motor1(1);  // ?? ?? M1 ??
-AF_DCMotor motor2(2);  // ?? ?? M2 ??
-AF_DCMotor motor3(3);  // ?? ?? M3 ??
-AF_DCMotor motor4(4);  // ?? ?? M4 ??
+// 모터 정의
+AF_DCMotor motor1(1);  // 모터 채널 M1 연결
+AF_DCMotor motor2(2);  // 모터 채널 M2 연결
+AF_DCMotor motor3(3);  // 모터 채널 M3 연결
+AF_DCMotor motor4(4);  // 모터 채널 M4 연결
 
-// ?? ?? ??
+// 서보 모터 정의
 Servo servo1;
 Servo servo2;
 
@@ -16,20 +16,20 @@ int servo1Pos = 90;
 int servo2Pos = 90;
 const int speedDelay = 20;
 
-// ??? ? ??
+// 릴레이 핀 정의
 const int relayPin = 14;  // A0 = D14
 
 void setup() {
-  Serial.begin(9600);  // ??? ?? ??
+  Serial.begin(9600);  // 시리얼 통신 시작
 
-  servo1.attach(9);   // ?? ?? 1 ?
-  servo2.attach(10);   // ?? ?? 2 ?
+  servo1.attach(9);   // 서보 모터 1 핀
+  servo2.attach(10);   // 서보 모터 2 핀
   servo1.write(servo1Pos);
   servo2.write(servo2Pos);
   
-  pinMode(relayPin, OUTPUT);  // ??? ?? ??
+  pinMode(relayPin, OUTPUT);  // 릴레이 출력 설정
 
-  // ?? ?? ??
+  // 모터 속도 설정
   motor1.setSpeed(80);
   motor2.setSpeed(80);
   motor3.setSpeed(80);
