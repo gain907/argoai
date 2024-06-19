@@ -1,0 +1,29 @@
+case 'F': moveForward(); break;
+case 'B': moveBackward(); break;
+case 'L': moveSidewaysLeft(); break;
+case 'R': moveSidewaysRight(); break;
+case 'Q': moveLeftForward(); break;
+case 'E': moveRightForward(); break;
+case 'Z': moveLeftBackward(); break;
+case 'C': moveRightBackward(); break;
+case 'T': rotateLeft(); break;
+case 'Y': rotateRight(); break;
+case 'S': stop(); break;
+case 'U': moveServo1up(); break;
+case 'D': moveServo1down(); break;
+case 'I': moveServo2up(); break;
+case 'K': moveServo2down(); break;
+case 'A': activateRelay(); break;
+case 'V': sleepRelay(); break;
+
+F = F,F,F,F
+B = B,B,B,B
+L = B,F,F,B
+R = F,B,B,F
+Q = S,F,F,S
+E = F,S,S,F
+Z = B,S,S,B
+C = S,B,B,S
+T = B,F,B,F
+Y = F,B,F,B
+S = S,S,S,S
