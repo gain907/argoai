@@ -1,15 +1,7 @@
 import serial
 import time
-import sys
-import tty
-import termios
-import cv2
 import threading
-
-# # 시리얼 포트 설정 (아두이노와 연결된 포트 설정)
-# ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
-# time.sleep(2)  # 포트 안정화 대기
-# print("Serial port opened successfully")
+import cv2
 
 # 시리얼 포트 설정 (아두이노와 연결된 포트 설정)
 try:
@@ -19,7 +11,6 @@ try:
 except serial.SerialException as e:
     print(f"Error opening serial port: {e}")
     exit()
-    
 
 print("Use the following keys to control the RC car and servo motors:")
 print("w: Move Forward, s: Move Backward, a: Move Left, d: Move Right")
@@ -38,8 +29,10 @@ if not cap.isOpened():
     print("Error: Could not open video stream.")
     exit()
 
-distance = "N/A11"
+distance = "N/A"
+direction = ""
 lock = threading.Lock()
+
 def read_distance():
     global distance
     while True:
@@ -47,28 +40,17 @@ def read_distance():
             if ser.in_waiting > 0:
                 try:
                     line = ser.readline().decode('utf-8', errors='ignore').strip()
-                    print(f"Received line: {line}")  # 디버그를 위해 읽은 데이터 출력
                     with lock:
                         distance = line
-                    print(f"Updated distance: {distance}")  # 거리값 업데이트 확인
-                except UnicodeDecodeError:
+                except Exception as e:
                     with lock:
                         distance = "N/A"
-                except serial.SerialException as e:
-                    print(f"Serial error: {e}")
-                    with lock:
-                        distance = "N/A"
-            else:
-                time.sleep(0.1)  # 시리얼 데이터가 없을 때 대기
-        else:
-            print("Serial port is closed.")
-            break
+        time.sleep(0.1)
 
 # 거리 값 읽기 스레드 시작
 distance_thread = threading.Thread(target=read_distance)
 distance_thread.daemon = True
 distance_thread.start()
-
 
 while True:
     # 카메라 프레임 읽기
@@ -79,14 +61,15 @@ while True:
 
     frame = cv2.flip(frame, 1)
     
-        # 동기화된 거리 값 읽기
+    # 동기화된 거리 값 읽기
     with lock:
         current_distance = distance
-    
-    print(f"Current distance: {current_distance}")  # 디버깅을 위해 추가
+        current_direction = direction
     
     # 거리 값을 화면에 표시
-    cv2.putText(frame, f"Distance: {distance} cm", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)        
+    cv2.putText(frame, f"Distance: {current_distance} cm", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    # 방향을 화면에 표시
+    cv2.putText(frame, f"Direction: {current_direction}", (350, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
     cv2.imshow("Fire Detection", frame)
 
     # 키 입력 처리
@@ -95,59 +78,55 @@ while True:
         break
     elif key == ord('w'):
         ser.write(b'F')  # Forward
-        print("Sent command: F")
+        direction = "Forward"
     elif key == ord('s'):
         ser.write(b'B')  # Backward
-        print("Sent command: B")        
+        direction = "Backward"        
     elif key == ord('a'):
         ser.write(b'L')  # Move Left
-        print("Sent command: L")        
+        direction = "Left"
     elif key == ord('d'):
         ser.write(b'R')  # Move Right
-        print("Sent command: R")
+        direction = "Right"
     elif key == ord('q'):
         ser.write(b'T')  # Rotate Left
-        print("Sent command: T")
+        direction = "Rotate Left"
     elif key == ord('e'):
         ser.write(b'Y')  # Rotate Right
-        print("Sent command: Y")
+        direction = "Rotate Right"
     elif key == ord('z'):
         ser.write(b'Q')  # Move Left Forward
-        print("Sent command: Q")
+        direction = "Left Forward"
     elif key == ord('c'):
         ser.write(b'E')  # Move Right Forward
-        print("Sent command: E")
+        direction = "Right Forward"
     elif key == ord('u'):
         ser.write(b'Z')  # Move Left Backward
-        print("Sent command: Z")
+        direction = "Left Backward"
     elif key == ord('o'):
         ser.write(b'C')  # Move Right Backward
-        print("Sent command: C")
+        direction = "Right Backward"
     elif key == ord('x'):
         ser.write(b'S')  # Stop
-        print("Sent command: S")
+        direction = "Stop"
     elif key == ord('i'):
         ser.write(b'U')  # Servo1 Up
-        print("Sent command: U")
+        direction = "Servo1 Up"
     elif key == ord('k'):
         ser.write(b'D')  # Servo1 Down
-        print("Sent command: D")
+        direction = "Servo1 Down"
     elif key == ord('j'):
         ser.write(b'I')  # Servo2 Up
-        print("Sent command: I")
+        direction = "Servo2 Up"
     elif key == ord('l'):
         ser.write(b'K')  # Servo2 Down
-        print("Sent command: K")
+        direction = "Servo2 Down"
     elif key == ord('m'):
         ser.write(b'A')  # Activate Relay
-        print("Sent command: A")
+        direction = "Relay On"
     elif key == ord('n'):
         ser.write(b'V')  # Deactivate Relay
-        print("Sent command: V")
-    elif key == ord('q'):
-        ser.write(b'S')  # Stop before quitting
-        print("Sent command: S")        
-        break
+        direction = "Relay Off"
 
 # 자원 해제
 cap.release()
